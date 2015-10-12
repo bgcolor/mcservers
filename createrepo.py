@@ -16,7 +16,7 @@ def _download_by_chunk(url, dir, name, CHUNK=16 * 1024):
     else:
         os.makedirs(dir)
 
-    print 'Start downloading %s' % (name)
+    print 'Start downloading %s%s' % (dir, name)
     
     response = urllib2.urlopen(url)
     total_size = response.info().getheader('Content-Length').strip()
@@ -25,6 +25,7 @@ def _download_by_chunk(url, dir, name, CHUNK=16 * 1024):
     print 'total size: %d' % (total_size)
     chunk_count = 0;
 
+    print '%s%s downloaded %3.0f%%.' % (dir, name, 0)
     with open(dir + name, 'wb') as f:
         while True:
             chunk = response.read(CHUNK)
@@ -32,15 +33,22 @@ def _download_by_chunk(url, dir, name, CHUNK=16 * 1024):
                 break
             f.write(chunk)
             chunk_count = chunk_count + 1
-            progress = 'Finished %3.0f%%.' % (chunk_count * CHUNK * 100 / total_size)
-            sys.stdout.write(progress)
-            sys.stdout.write('\b'*len(progress))
+            progress = '%s%s downloaded %3.0f%%.' % (dir, name, chunk_count * CHUNK * 100 / total_size)
+            # sys.stdout.write(progress)
+            # sys.stdout.write('\b'*len(progress))
+            print progress
 
     print 'Completely finished downloading %s.' % (name)
 
 def main():
-    print 'Please input the version fo repo you want to create(all of all of the versions):'
-    dstversion = raw_input()
+    if len(sys.argv) > 1 :
+        if sys.argv[1] == 'all': 
+            dstversion = 'all'
+        else:
+            dstversion = sys.argv[1]
+    else: 
+        print 'Please input the version fo repo you want to create(all of all of the versions):'
+        dstversion = raw_input()
 
     url = 'http://s3.amazonaws.com/Minecraft.Download/versions/%s/minecraft_server.%s.jar'
     dstname = '/minecraft_server.jar'

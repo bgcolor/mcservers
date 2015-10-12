@@ -15,7 +15,7 @@ print 'Please input IP:'
 ip = raw_input()
 
 
-fp = open('ports')
+fp = open('ports', 'w+')
 ports = []
 
 res = fp.readlines()

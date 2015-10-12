@@ -2,13 +2,47 @@
 __author__ = 'Administrator'
 
 import os
+import sys
 import urllib
 import urllib2
 import json
 
-def download(dstversion):
+def _download_by_chunk(url, dir, name, CHUNK=16 * 1024):
+    if os.path.isdir(dir):
+        print 'The directory is already existed. Do you want to redownload it?'
+        t = raw_input()
+        if t != 'y' :
+            return False
+    else:
+        os.makedirs(dir)
+
+    print 'Start downloading %s' % (name)
+    
+    response = urllib2.urlopen(url)
+    total_size = response.info().getheader('Content-Length').strip()
+    total_size = int(total_size)
+
+    print 'total size: %d' % (total_size)
+    chunk_count = 0;
+
+    with open(dir + name, 'wb') as f:
+        while True:
+            chunk = response.read(CHUNK)
+            if not chunk:
+                break
+            f.write(chunk)
+            chunk_count = chunk_count + 1
+            progress = 'Finished %3.0f%%.' % (chunk_count * CHUNK * 100 / total_size)
+            sys.stdout.write(progress)
+            sys.stdout.write('\b'*len(progress))
+
+    print 'Completely finished downloading %s.' % (name)
+
+def main():
+    print 'Please input the version fo repo you want to create(all of all of the versions):'
+    dstversion = raw_input()
+
     url = 'http://s3.amazonaws.com/Minecraft.Download/versions/%s/minecraft_server.%s.jar'
-    dstdir = 'mcrepo/%s' % dstversion
     dstname = '/minecraft_server.jar'
 
     if dstversion == 'all' :
@@ -26,54 +60,12 @@ def download(dstversion):
             versions = json.loads(f.read())
             versions = versions['versions']
             for version in versions :
-                response = urllib2.urlopen(url % (version['id'], version['id']))
-                total_size = response.info().getheader('Content-Length').strip()
-                total_size = int(total_size)
-                CHUNK = 16 * 1024
-
-                print 'Start downloading total: %d' % (total_size)
-                cchunk = 0;
-                os.mkdir(dstdir)
-                with open(dstdir + dstname, 'wb') as f:
-                   while True:
-                      chunk = response.read(CHUNK)
-                      if not chunk: break
-                      f.write(chunk)
-                      print 'Finished %f%.' % (++cchunk * CHUNK / total_size)
-
-                print 'Completely finished.'
+                # print url % (version['id'], version['id'])
+                dstdir = 'mcrepo/%s'
+                _download_by_chunk(url % (version['id'], version['id']), dstdir % (version['id']), dstname)
     else :
-        if os.path.isdir(dstdir) :
-            print 'This version is already existed. Do you want to redownload it?'
-            t = raw_input()
-            if t != 'y' :
-                return False
-        else :
-            os.makedirs(dstdir)
+        dstdir = 'mcrepo/%s' % dstversion
+        _download_by_chunk(url % (dstversion, dstversion), dstdir, dstname)
 
-        response = urllib2.urlopen(url % (dstversion, dstversion))
-        total_size = response.info().getheader('Content-Length').strip()
-        total_size = int(total_size)
-        CHUNK = 16 * 1024
-
-        print 'Start downloading total: %d' % (total_size)
-        cchunk = 0;
-
-        with open(dstdir + dstname, 'wb') as f:
-            while True :
-                chunk = response.read(CHUNK)
-                if not chunk :
-                    break
-                f.write(chunk)
-                cchunk = cchunk + 1
-                print 'Finished %3.0f%%.' % (cchunk * CHUNK * 100 / total_size)
-
-
-        print 'Completely finished.'
-
-def __main__():
-    print 'Please input the version fo repo you want to create(all of all of the versions):'
-    dstversion = raw_input()
-    download(dstversion)
-
-__main__()
+if __name__ == '__main__': 
+    main()

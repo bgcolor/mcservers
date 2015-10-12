@@ -10,9 +10,9 @@ import json
 def _download_by_chunk(url, dir, name, CHUNK=16 * 1024):
     if os.path.isdir(dir):
         print 'The directory is already existed. Do you want to redownload it?'
-        t = raw_input()
-        if t != 'y' :
-            return False
+        # t = raw_input()
+        # if t != 'y' :
+        #     return False
     else:
         os.makedirs(dir)
 
@@ -25,7 +25,6 @@ def _download_by_chunk(url, dir, name, CHUNK=16 * 1024):
     print 'total size: %d' % (total_size)
     chunk_count = 0;
 
-    print '%s%s downloaded %3.0f%%.' % (dir, name, 0)
     with open(dir + name, 'wb') as f:
         while True:
             chunk = response.read(CHUNK)
@@ -36,7 +35,8 @@ def _download_by_chunk(url, dir, name, CHUNK=16 * 1024):
             progress = '%s%s downloaded %3.0f%%.' % (dir, name, chunk_count * CHUNK * 100 / total_size)
             # sys.stdout.write(progress)
             # sys.stdout.write('\b'*len(progress))
-            print progress
+            if chunk_count % 5 == 0 :
+                print progress
 
     print 'Completely finished downloading %s.' % (name)
 

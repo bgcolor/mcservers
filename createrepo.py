@@ -28,7 +28,7 @@ def _download(url, dir, name):
 
     try:
         urllib.urlretrieve(url, dir + name, _download_progress)
-        print 'Completely finished downloading %s%s.' % (dir, name)
+        print '\nCompletely finished downloading %s%s.' % (dir, name)
         open(dir + donename, 'w')
     except:
         print 'Fail to download %s%s.' % (dir, name)
@@ -64,7 +64,8 @@ def main():
             versions = json.loads(f.read())
             versions = versions['versions']
             for version in versions :
-                if version['type'] != 'old_alpha':
+                # if version['type'] != 'old_alpha':
+                if version['type'] == 'release':
                     dstdir = 'mcrepo/%s'
                     _download(url % (version['id'], version['id']), dstdir % (version['id']), dstname)
     else :

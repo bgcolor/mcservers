@@ -38,7 +38,7 @@ def _download_by_chunk(url, dir, name, CHUNK=16 * 1024):
             if chunk_count % 5 == 0 :
                 print progress
 
-    print 'Completely finished downloading %s.' % (name)
+    print 'Completely finished downloading %s%s.' % (dir, name)
 
 def main():
     if len(sys.argv) > 1 :

@@ -7,38 +7,34 @@ import urllib
 import urllib2
 import json
 
-def _download_by_chunk(url, dir, name, CHUNK=16 * 1024):
+def _download_progress(count, blockSize, totalSize):
+      percent = int(count*blockSize*100/totalSize)
+      sys.stdout.write("\rdownload...%d%%" % percent)
+      sys.stdout.flush()
+
+def _download(url, dir, name):
+    donename = '/done'
     if os.path.isdir(dir):
-        print 'The directory is already existed. Do you want to redownload it?'
-        # t = raw_input()
-        # if t != 'y' :
-        #     return False
+        if os.path.isfile(dir + donename):
+            print 'The directory is already existed. Do you want to redownload it?'
+            # t = raw_input()
+            # if t != 'y' :
+            #     return False
+            return False
     else:
         os.makedirs(dir)
 
     print 'Start downloading %s%s' % (dir, name)
-    
-    response = urllib2.urlopen(url)
-    total_size = response.info().getheader('Content-Length').strip()
-    total_size = int(total_size)
 
-    print 'total size: %d' % (total_size)
-    chunk_count = 0;
+    try:
+        urllib.urlretrieve(url, dir + name, _download_progress)
+        print 'Completely finished downloading %s%s.' % (dir, name)
+        open(dir + donename, 'w')
+    except:
+        print 'Fail to download %s%s.' % (dir, name)
+        return False
 
-    with open(dir + name, 'wb') as f:
-        while True:
-            chunk = response.read(CHUNK)
-            if not chunk:
-                break
-            f.write(chunk)
-            chunk_count = chunk_count + 1
-            progress = '%s%s downloaded %3.0f%%.' % (dir, name, chunk_count * CHUNK * 100 / total_size)
-            # sys.stdout.write(progress)
-            # sys.stdout.write('\b'*len(progress))
-            if chunk_count % 5 == 0 :
-                print progress
-
-    print 'Completely finished downloading %s%s.' % (dir, name)
+    return True
 
 def main():
     if len(sys.argv) > 1 :
@@ -68,12 +64,12 @@ def main():
             versions = json.loads(f.read())
             versions = versions['versions']
             for version in versions :
-                # print url % (version['id'], version['id'])
-                dstdir = 'mcrepo/%s'
-                _download_by_chunk(url % (version['id'], version['id']), dstdir % (version['id']), dstname)
+                if version['type'] != 'old_alpha':
+                    dstdir = 'mcrepo/%s'
+                    _download(url % (version['id'], version['id']), dstdir % (version['id']), dstname)
     else :
         dstdir = 'mcrepo/%s' % dstversion
-        _download_by_chunk(url % (dstversion, dstversion), dstdir, dstname)
+        _download(url % (dstversion, dstversion), dstdir, dstname)
 
 if __name__ == '__main__': 
     main()

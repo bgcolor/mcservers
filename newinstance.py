@@ -5,8 +5,10 @@ import os
 import shutil
 
 # configurations
-srcgf = 'mc/%s/minecraft_server.jar' # src game file format
+srcgf = 'mcrepo/%s/minecraft_server.jar' # src game file format
 dstgf = '%s/minecraft_server.jar' # dst game file format
+maxmemory = '512m' # max memory jvm use
+minmemory = '512m' # min memory jvm use
 
 print 'Please input version:'
 version = raw_input()
@@ -19,6 +21,7 @@ fp = open('ports', 'w+')
 ports = []
 
 res = fp.readlines()
+
 if res :
     for s in res:
         ports.append(s)
@@ -36,12 +39,12 @@ try:
     os.mkdir(mcdir)
 except:
     print 'can not create game directory %s!' % (mcdir)
-    exit()
 
 try:
     shutil.copy(srcgf % (version), dstgf % (mcdir))
 except:
     print 'can not cp game files into specified directory.'
+
 properties = '''#Minecraft server properties
 generator-settings=
 op-permission-level=4
@@ -78,11 +81,22 @@ spawn-protection=16
 motd=A Minecraft Server
 ''' % (port, ip)
 
+startscript = '''java -Xmx%s -Xms%s -jar minecraft_server.jar nogui
+''' % (maxmemory, minmemory)
+
 f=open('%s/server.properties' % (mcdir), 'w')
 f.write(properties);
 f.close()
 
+f=open('%s/start.sh' % (mcdir), 'w')
+f.write(startscript);
+f.close()
 
-fp = open('ports', 'a')
-fp.write('%s%s' % (str(port), '\n'))
-fp.close()
+# if os.system('%s/start.bat' % (mcdir)) != 1:
+#     fp = open('ports', 'a')
+#     fp.write('%s%s' % (str(port), '\n'))
+#     fp.close()
+# else:
+#     os.rmdir(mcdir)
+os.chdir(mcdir)
+os.system(startscript)

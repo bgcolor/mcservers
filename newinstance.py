@@ -1,32 +1,53 @@
-#!/usr/bin/python
+#!/bin/python
 __author__ = 'bgcolor'
 
 import os
+import sys
 import shutil
+from subprocess import Popen
 
 # configurations
 srcgf = 'mcrepo/%s/minecraft_server.jar' # src game file format
-dstgf = '%s/minecraft_server.jar' # dst game file format
-maxmemory = '512m' # max memory jvm use
-minmemory = '512m' # min memory jvm use
+dstgf = '%s/minecraft_server.%s_%s.jar' # dst game file format
+# ip = '121.43.155.82'
+ip = '127.0.0.1'
 
-print 'Please input version:'
-version = raw_input()
+# parameter from command line
+if len(sys.argv) > 1:
+    version = sys.argv[1]
+else:
+    version = '1.7.2'
 
-print 'Please input IP:'
-ip = raw_input()
+maxmemory = '-Xmx512m' # max memory jvm use
+# minmemory = '-Xms512m' # min memory jvm use\
+minmemory = '-Xincgc' # enable incremental garbage collection
 
+# print 'Please input version:'
+# version = raw_input()
+#
+# print 'Please input IP:'
+# ip = raw_input()
 
-fp = open('ports', 'w+')
+def onfailure(mcdir):
+    if os.system('cat start.log') == 0:
+        shutil.rmtree(os.path.abspath('../' + mcdir))
+    else:
+        print 'Fatal error occurred please cd %s manually!' % (mcdir)
+    print 'Server starting failed !'
+
 ports = []
+if os.path.isfile('ports'):
+    with open('ports') as fp:
+        res = fp.readlines()
+        fp.close()
+        if res :
+            for s in res:
+                ports.append(s)
+else:
+    fp = open('ports','w')
+    fp.close()
 
-res = fp.readlines()
 
-if res :
-    for s in res:
-        ports.append(s)
-
-fp.close()
 ports.sort();
 
 if len(ports) == 0 :
@@ -39,9 +60,10 @@ try:
     os.mkdir(mcdir)
 except:
     print 'can not create game directory %s!' % (mcdir)
+    exit()
 
 try:
-    shutil.copy(srcgf % (version), dstgf % (mcdir))
+    shutil.copy(srcgf % (version), dstgf % (mcdir, version, port))
 except:
     print 'can not cp game files into specified directory.'
 
@@ -81,8 +103,10 @@ spawn-protection=16
 motd=A Minecraft Server
 ''' % (port, ip)
 
-startscript = '''java -Xmx%s -Xms%s -jar minecraft_server.jar nogui
-''' % (maxmemory, minmemory)
+# startscript = '''java -Xmx%s -Xms%s -jar minecraft_server.%s_%s.jar nogui
+# ''' % (maxmemory, minmemory, version, port)
+startscript = 'nohup java %s %s -jar minecraft_server.%s_%d.jar nogui >start.log 2>&1' % (maxmemory, minmemory, version, port)
+startargs = ['nohup', 'java', '%s' % (maxmemory), '%s' % (minmemory), '-jar', 'minecraft_server.%s_%d.jar' % (version, port), 'nogui']
 
 f=open('%s/server.properties' % (mcdir), 'w')
 f.write(properties);
@@ -92,11 +116,24 @@ f=open('%s/start.sh' % (mcdir), 'w')
 f.write(startscript);
 f.close()
 
-# if os.system('%s/start.bat' % (mcdir)) != 1:
-#     fp = open('ports', 'a')
-#     fp.write('%s%s' % (str(port), '\n'))
-#     fp.close()
-# else:
-#     os.rmdir(mcdir)
-os.chdir(mcdir)
-os.system(startscript)
+f=open('%s/start.log' % (mcdir), 'w')
+f.close()
+
+os.system('chmod 755 %s/start.sh' % (mcdir))
+
+try:
+    os.chdir(mcdir)
+    print '''
+        Server will start!
+        IP: %s\tport: %s
+        address: %s:%s
+        tail -f %s/start.log for log'
+    ''' % (ip, port, ip, port, mcdir)
+    os.system(startscript)
+    fp = open('ports', 'a')
+    fp.write('%s%s' % (str(port), '\n'))
+    fp.close()
+    print 'Server starts successfully!'
+except:
+    onfailure(mcdir)
+

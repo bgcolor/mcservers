@@ -1,10 +1,10 @@
-#!/usr/bin/python
-__author__ = 'Administrator'
+#!/bin/python
+__author__ = 'bgcolor'
 
 import os
 import sys
 import urllib
-import urllib2
+# import urllib2
 import json
 
 def _download_progress(count, blockSize, totalSize):
@@ -31,7 +31,7 @@ def _download(url, dir, name):
         print '\nCompletely finished downloading %s%s.' % (dir, name)
         open(dir + donename, 'w')
     except:
-        print 'Fail to download %s%s.' % (dir, name)
+        print '\nFail to download %s%s.' % (dir, name)
         return False
 
     return True
